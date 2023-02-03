@@ -9,20 +9,23 @@ using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCou
 
 public class CreatureManager : MonoBehaviour
 {
-    RandomII II;
+    RandomAI _ai;
 
     int coordinateX;
     int coordinateY;
 
     public GameObject creature;
     GameObject asv;
+
+    private WorldManager worldManager;
     // Start is called before the first frame update
     void Start()
     {
         coordinateX = 10;
         coordinateY = 10;
-        II = new RandomII(coordinateX, coordinateY, 2, 8, 10);
+        _ai = new RandomAI(coordinateX, coordinateY, 2, 8, 10);
         asv = Instantiate(creature, new Vector3(coordinateX, coordinateY, 0), Quaternion.identity);
+        worldManager = GameObject.FindGameObjectWithTag("WorldManager").GetComponent<WorldManager>();
         Info();
         StartCoroutine(Move());
     }
@@ -42,35 +45,36 @@ public class CreatureManager : MonoBehaviour
     }
     public void Info()
     {
-        Debug.LogError(II.temp);
-        Debug.LogError(II.satiety);
-        Debug.LogError(II.condition);
+        Debug.Log($"Temp: {_ai.temp}");
+        Debug.Log($"Satiety: {_ai.satiety}");
+        Debug.Log($"Condition: {_ai.condition}");
     }
     public void RestartCreature()
     {
-        GameObject creat = GameObject.FindGameObjectWithTag("Creature");
-        Destroy(creat);
+        Destroy(asv);
         coordinateX = 10;
         coordinateY = 10;
-        II = new RandomII(coordinateX, coordinateY, 2, 8, 10);
+        _ai = new RandomAI(coordinateX, coordinateY, 2, 8, 10);
         asv = Instantiate(creature, new Vector3(coordinateX, coordinateY, 0), Quaternion.identity);
         Info();
     }
+    
     IEnumerator Move()
     {
         while (true)
         {
-            if (II.condition.name == "Dead")
+            if (_ai.condition is Dead)
             {
-                GameObject.FindGameObjectWithTag("WorldManager").GetComponent<WorldManager>().world = new World(20, 20, 0, 10, 0, 10);
-                GameObject.FindGameObjectWithTag("WorldManager").GetComponent<WorldManager>().ShowWorld();
+                Debug.LogWarning("Creature DEAD");
+                worldManager.world = new World(20, 20, 0, 10, 0, 10);
+                worldManager.ShowWorld();
                 RestartCreature();
             }
             else
             {
-                II.ChooseMove(GameObject.FindGameObjectWithTag("WorldManager").GetComponent<WorldManager>().world);
+                _ai.ChooseMove(worldManager.world);
                 Info();
-                asv.transform.position = new Vector3(II.coordinateX, II.coordinateY, 0);
+                asv.transform.position = new Vector3(_ai.coordinateX, _ai.coordinateY, 0);
             }
             yield return new WaitForSeconds(0.5f);
         }
